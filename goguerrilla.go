@@ -75,7 +75,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
-	"net/http"
 	"os"
 	"regexp"
 	"runtime"
@@ -120,11 +119,6 @@ var gConfig = map[string]string{
 	"GSMTP_VERBOSE":          "Y",
 	"GSMTP_LOG_FILE":         "",    // Eg. /var/log/goguerrilla.log or leave blank if no logging
 	"GSMTP_TIMEOUT":          "100", // how many seconds before timeout.
-	"MYSQL_HOST":             "127.0.0.1:3306",
-	"MYSQL_USER":             "gmail_mail",
-	"MYSQL_PASS":             "ok",
-	"MYSQL_DB":               "gmail_mail",
-	"GM_MAIL_TABLE":          "new_mail",
 	"GSTMP_LISTEN_INTERFACE": "0.0.0.0:25",
 	"GSMTP_PUB_KEY":          "/etc/ssl/certs/ssl-cert-snakeoil.pem",
 	"GSMTP_PRV_KEY":          "/etc/ssl/private/ssl-cert-snakeoil.key",
@@ -135,12 +129,6 @@ var gConfig = map[string]string{
 	"NGINX_AUTH":             "127.0.0.1:8025", // If using Nginx proxy, ip and port to serve Auth requsts
 	"SGID":                   "1008",           // group id
 	"SUID":                   "1008",           // user id, from /etc/passwd
-}
-
-type redisClient struct {
-	count int
-	conn  redis.Conn
-	time  int
 }
 
 func logln(level int, s string) {
@@ -231,9 +219,7 @@ func main() {
 	for i := 0; i < 3; i++ {
 		go saveMail()
 	}
-	if gConfig["NGINX_AUTH_ENABLED"] == "Y" {
-		go nginxHTTPAuth()
-	}
+
 	// Start listening for SMTP connections
 	listener, err := net.Listen("tcp", gConfig["GSTMP_LISTEN_INTERFACE"])
 	if err != nil {
@@ -471,8 +457,9 @@ func saveMail() {
 	var to string
 	var err error
 	var body string
-	var redis_err error
 	var length int
+
+	/**
 	redis := &redisClient{}
 	db := autorc.New("tcp", "", gConfig["MYSQL_HOST"], gConfig["MYSQL_USER"], gConfig["MYSQL_PASS"], gConfig["MYSQL_DB"])
 	db.Register("set names utf8")
@@ -488,6 +475,7 @@ func saveMail() {
 	if sql_err != nil {
 		logln(2, fmt.Sprintf("Sql statement incorrect: %s", sql_err))
 	}
+	*/
 
 	//  receives values from the channel repeatedly until it is closed.
 	for {
@@ -513,6 +501,8 @@ func saveMail() {
 		// compress to save space
 		client.data = compress(add_head + client.data)
 		body = "gzencode"
+
+		/**
 		redis_err = redis.redisConnection()
 		if redis_err == nil {
 			_, do_err := redis.conn.Do("SETEX", client.hash, 3600, client.data)
@@ -523,6 +513,7 @@ func saveMail() {
 		} else {
 			logln(1, fmt.Sprintf("redis: %v", redis_err))
 		}
+
 		// bind data to cursor
 		ins.Bind(
 			to,
@@ -534,6 +525,7 @@ func saveMail() {
 			to,
 			client.address)
 		// save, discard result
+
 		_, _, err = ins.Exec()
 		if err != nil {
 			logln(1, fmt.Sprintf("Database error, %v %v", err))
@@ -544,24 +536,11 @@ func saveMail() {
 			if err != nil {
 				logln(1, fmt.Sprintf("Failed to incr count:", err))
 			}
-			client.savedNotify <- 1
 		}
+		**/
+		fmt.Println(to, err, body, length)
+		client.savedNotify <- 1
 	}
-}
-
-func (c *redisClient) redisConnection() (err error) {
-	if c.count > 100 {
-		c.conn.Close()
-		c.count = 0
-	}
-	if c.count == 0 {
-		c.conn, err = redis.Dial("tcp", ":6379")
-		if err != nil {
-			// handle error
-			return err
-		}
-	}
-	return nil
 }
 
 func validateEmailData(client *Client) (user string, host string, addr_err error) {
@@ -704,28 +683,4 @@ func md5hex(str string) string {
 	h.Write([]byte(str))
 	sum := h.Sum([]byte{})
 	return hex.EncodeToString(sum)
-}
-
-// If running Nginx as a proxy, give Nginx the IP address and port for the SMTP server
-// Primary use of Nginx is to terminate TLS so that Go doesn't need to deal with it.
-// This could perform auth and load balancing too
-// See http://wiki.nginx.org/MailCoreModule
-func nginxHTTPAuth() {
-	parts := strings.Split(gConfig["GSTMP_LISTEN_INTERFACE"], ":")
-	gConfig["HTTP_AUTH_HOST"] = parts[0]
-	gConfig["HTTP_AUTH_PORT"] = parts[1]
-	fmt.Println(parts)
-	http.HandleFunc("/", nginxHTTPAuthHandler)
-	err := http.ListenAndServe(gConfig["NGINX_AUTH"], nil)
-	if err != nil {
-		log.Fatal("ListenAndServe: ", err)
-	}
-
-}
-
-func nginxHTTPAuthHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Auth-Status", "OK")
-	w.Header().Add("Auth-Server", gConfig["HTTP_AUTH_HOST"])
-	w.Header().Add("Auth-Port", gConfig["HTTP_AUTH_PORT"])
-	fmt.Fprint(w, "")
 }
