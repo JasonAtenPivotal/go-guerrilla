@@ -1,4 +1,4 @@
-/** 
+/**
 Go-Guerrilla SMTPd
 A minimalist SMTP server written in Go, made for receiving large volumes of mail.
 Works either as a stand-alone or in conjunction with Nginx SMTP proxy.
@@ -45,7 +45,7 @@ $ go get github.com/ziutek/mymysql/autorc
 $ go get github.com/ziutek/mymysql/godrv
 $ go get github.com/sloonz/go-iconv
 
-TODO: after failing tls, 
+TODO: after failing tls,
 
 patch:
 rebuild all: go build -a -v new.go
@@ -67,11 +67,10 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/garyburd/redigo/redis"
+
 	"github.com/sloonz/go-iconv"
 	"github.com/sloonz/go-qprintable"
-	"github.com/ziutek/mymysql/autorc"
-	_ "github.com/ziutek/mymysql/godrv"
+
 	"io"
 	"io/ioutil"
 	"log"
