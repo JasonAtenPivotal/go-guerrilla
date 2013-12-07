@@ -1,10 +1,11 @@
+Clone of Go-Guerrilla SMTPd without Redis or MySQL. Saves locally and sends a
+POST request to different server for each incoming mail
+
 
 Go-Guerrilla SMTPd
 ====================
 
 An minimalist SMTP server written in Go, made for receiving large volumes of mail.
-
-![Go Guerrilla](https://raw.github.com/flashmob/go-guerrilla/master/GoGuerrilla.png)
 
 ### What is Go Guerrilla SMTPd?
 
