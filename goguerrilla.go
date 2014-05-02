@@ -392,7 +392,7 @@ func handleClient(client *Client) {
 }
 
 func responseAdd(client *Client, line string) {
-	logln(1, fmt.Sprintf("[responseAdd] writing \"%s\"", line))
+	logln(1, fmt.Sprintf("[responseAdd] > \"%s\"", line))
 	client.response = line + "\r\n"
 }
 func closeClient(client *Client) {
@@ -414,7 +414,6 @@ func readSmtp(client *Client) (input string, err error) {
 	for err == nil {
 		client.conn.SetDeadline(time.Now().Add(timeout * time.Second))
 		reply, err = client.bufin.ReadString('\n')
-		// logln(1, fmt.Sprintf("[readSmtp] Read: %s; err: %v", reply, err))
 
 		if reply != "" {
 			input = input + reply
@@ -428,14 +427,14 @@ func readSmtp(client *Client) (input string, err error) {
 			}
 		}
 		if err != nil {
-			logln(1, fmt.Sprintf("[readSmtp] Error present: \"%v\"; anything from buffers? \"%v\"", err, reply))
+			logln(1, fmt.Sprintf("[readSmtp] Error: \"%v\"; read from client: \"%v\"", err, reply))
 			break
 		}
 		if strings.HasSuffix(input, suffix) {
 			break
 		}
 	}
-	logln(1, fmt.Sprintf("[readSmtp] < \"%v\", err: \"%v\"", input, err))
+	logln(1, fmt.Sprintf("[readSmtp]   < \"%v\", err: \"%v\"", input, err))
 	return input, err
 }
 
