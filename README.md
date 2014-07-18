@@ -74,15 +74,21 @@ Nginx can be used to proxy SMTP traffic for GoGuerrilla SMTPd
 
 Why proxy SMTP?
 
- *	Terminate TLS connections: Golang is not there yet when it comes to TLS.
-At present, only a partial implementation of TLS is provided (as of Nov 2012). 
-OpenSSL on the other hand, used in Nginx, has a complete implementation of
-SSL v2/v3 and TLS protocols.
+ *	Terminate TLS connections: In Nov 2012 when this was written, Golang was
+not all there yet when it comes to TLS. The situation is better now but perhaps
+not comprehensively so. See [1][2] for current status. 
+OpenSSL on the other hand, used in Nginx, has a complete implementation 
+of SSL v2/v3 and TLS protocols.
+
+[1] https://code.google.com/p/go/issues/detail?id=5742
+[2] https://groups.google.com/forum/#!topic/golang-nuts/LjhVww0TQi4
+
  *	Could be used for load balancing and authentication in the future.
 
- 1.	Compile nginx with --with-mail --with-mail_ssl_module
 
- 2.	Configuration:
+ a.	Compile nginx with --with-mail --with-mail_ssl_module
+
+ b.	Configuration:
 
 	
 		mail {
