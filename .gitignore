@@ -1,2 +1,6 @@
 go-guerrilla
 generate_cert/generate_cert
+gomailclient/gomailclient
+*~
+cert.pem
+key.pem

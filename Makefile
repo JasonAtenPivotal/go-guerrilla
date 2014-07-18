@@ -1,4 +1,5 @@
 all:
+	cd gomailclient; go build; go install
 	go build
 	go install
 	# if you need certs see: make cert
@@ -13,7 +14,7 @@ debug:
 	go install
 
 clean:
-	rm -f  *~ *.o generate_cert/generate_cert  go-guerrilla  go-guerrilla.test
+	rm -f  *~ *.o generate_cert/generate_cert  go-guerrilla  go-guerrilla.test  gomailclient/gomailclient
 
 testbuild:
 	go test -c -gcflags "-N -l" -v
