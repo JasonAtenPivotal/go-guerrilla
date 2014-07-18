@@ -4,6 +4,8 @@ Clone of Go-Guerrilla SMTPd without Redis or MySQL.
 Go-Guerrilla SMTPd
 ====================
 
+![Go Guerrilla](https://raw.github.com/jasonatenpivotal/go-guerrilla/master/GoGuerrilla.png)
+
 An minimalist SMTP server written in Go, made for receiving large volumes of mail.
 
 ### What is Go Guerrilla SMTPd?
@@ -81,6 +83,7 @@ OpenSSL on the other hand, used in Nginx, has a complete implementation
 of SSL v2/v3 and TLS protocols.
 
 [1] https://code.google.com/p/go/issues/detail?id=5742
+
 [2] https://groups.google.com/forum/#!topic/golang-nuts/LjhVww0TQi4
 
  *	Could be used for load balancing and authentication in the future.
