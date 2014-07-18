@@ -1,5 +1,4 @@
-Clone of Go-Guerrilla SMTPd without Redis or MySQL. Saves locally and sends a
-POST request to different server for each incoming mail
+Clone of Go-Guerrilla SMTPd without Redis or MySQL.
 
 
 Go-Guerrilla SMTPd
@@ -13,8 +12,7 @@ It's a small SMTP server written in Go, for the purpose of receiving large volum
 Written for GuerrillaMail.com which processes tens of thousands of emails
 every hour.
 
-The purpose of this daemon is to grab the email, save it to the database
-and disconnect as quickly as possible.
+The purpose of this daemon is to grab the email and disconnect as quickly as possible.
 
 A typical user of this software would probably want to customize the saveMail function for
 their own systems.
@@ -34,71 +32,11 @@ https://github.com/flashmob/Guerrilla-SMTPd
 
 It's not a direct port, although the purpose and functionality remains identical.
 
-This Go version was made in order to take advantage of our new server with 8 cores. 
-Not that the PHP version was taking much CPU anyway, it always stayed at about 1-5%
-despite guzzling down a ton of email every day...
-
-As always, the bottleneck today is the network and secondary storage. It's highly probable
-that in the near future, secondary storage will become so fast that the I/O bottleneck
-will not be an issue. Prices of Solid State Drives are dropping fast, their speeds are rapidly
-increasing. So if the I/O bottleneck would disappear, it will be replaced by a new bottleneck,
-the CPU. 
-
-To prepare for the CPU bottleneck, we need to be able to scale our software to multiple cores.
-Since PHP runs in a single process, it can only run on a single core. Sure, it would
-have been possible to use fork(), but that can get messy and doesn't play well with
-libevent. Also, it would have been possible to start an instance for each core and
-use a proxy to distribute the traffic to each instance, but that would make the system too
- complicated.
-
-The most alluring aspect of Go are the Goroutines! It makes concurrent programming
-easy, clean and fun! Go programs can also take advantage of all your machine's multiple 
-cores without much effort that you would otherwise need with forking or managing your
-event loop callbacks, etc. Golang solves the C10K problem in a very interesting way
- http://en.wikipedia.org/wiki/C10k_problem
-
-If you do invite GoGuerrilla in to your system, please remember to feed it with lots
-of spam - spam is what it likes best!
 
 Getting started
 ===========================
 
-To build, you will need to install the following Go libs:
-
-	$ go get github.com/ziutek/mymysql/thrsafe
-	$ go get github.com/ziutek/mymysql/autorc
-	$ go get github.com/ziutek/mymysql/godrv
-	$ go get github.com/sloonz/go-iconv
-	$ go get github.com/garyburd/redigo/redis
-
-Rename goguerrilla.conf.sample to goguerrilla.conf
-
-Setup the following table:
-(The vanilla saveMail function also uses Redis)
-
-	CREATE TABLE IF NOT EXISTS `new_mail` (
-	  `mail_id` int(11) NOT NULL auto_increment,
-	  `date` datetime NOT NULL,
-	  `from` varchar(128) character set latin1 NOT NULL,
-	  `to` varchar(128) character set latin1 NOT NULL,
-	  `subject` varchar(255) NOT NULL,
-	  `body` text NOT NULL,
-	  `charset` varchar(32) character set latin1 NOT NULL,
-	  `mail` longblob NOT NULL,
-	  `spam_score` float NOT NULL,
-	  `hash` char(32) character set latin1 NOT NULL,
-	  `content_type` varchar(64) character set latin1 NOT NULL,
-	  `recipient` varchar(128) character set latin1 NOT NULL,
-	  `has_attach` int(11) NOT NULL,
-	  `ip_addr` varchar(15) NOT NULL,
-	  `delivered` bit(1) NOT NULL default b'0',
-	  `attach_info` text NOT NULL,
-	  `dkim_valid` tinyint(4) default NULL,
-	  PRIMARY KEY  (`mail_id`),
-	  KEY `to` (`to`),
-	  KEY `hash` (`hash`),
-	  KEY `date` (`date`)
-	) ENGINE=InnoDB  DEFAULT CHARSET=utf8
+Copy goguerrilla.conf.sample to goguerrilla.conf
 
 
 Configuration
