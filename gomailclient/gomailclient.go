@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/smtp"
@@ -32,8 +33,6 @@ func simpleSendEmailExampleUsingWorkingSendMail() {
 	   	WorkingSendMail(nil, goodmsg)
 	*/
 }
-
-
 
 // from http://grokbase.com/t/gg/golang-nuts/137q8xwneh/go-nuts-smtp-self-signed-certificate
 /*
@@ -103,7 +102,7 @@ func WorkingSendMail(a smtp.Auth, msg string) error {
 
 func sendGopherMail(body string, titlePrefix string) {
 
-	addr := "localhost:25"
+	addr := "localhost:2525"
 	textbody := body
 	htmlbody := "<font size=\"4\"><pre>\n" + body + "\n</pre></font>\n"
 	t := time.Now()
@@ -119,7 +118,7 @@ func sendGopherMail(body string, titlePrefix string) {
 	}
 
 	err := gophermail.SendMail(addr, nil, msg)
-	if err != nil {
+	if err != io.EOF && err != nil {
 		panic(err)
 	}
 }

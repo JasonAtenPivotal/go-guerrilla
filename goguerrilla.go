@@ -124,9 +124,9 @@ var gConfig = map[string]string{
 }
 
 func logln(level int, s string) {
-	if gConfig["GSMTP_VERBOSE"] == "Y" {
-		fmt.Println(s)
-	}
+	//if gConfig["GSMTP_VERBOSE"] == "Y" {
+	fmt.Println(s)
+	//}
 	if level == 2 {
 		log.Fatalf(s)
 	}
@@ -136,12 +136,13 @@ func logln(level int, s string) {
 }
 
 func configure() {
-	var configFile, verbose, iface string
+	var configFile, iface string
+	//var verbose string
 
 	log.SetOutput(os.Stdout)
 	// parse command line arguments
 	flag.StringVar(&configFile, "config", "goguerrilla.conf", "Path to the configuration file")
-	flag.StringVar(&verbose, "v", "n", "Verbose, [y | n] ")
+	//flag.StringVar(&verbose, "v", "n", "Verbose, [y | n] ")
 	flag.StringVar(&iface, "if", "", "Interface and port to listen on, eg. 127.0.0.1:2525 ")
 	flag.Parse()
 
@@ -158,7 +159,7 @@ func configure() {
 	for k, v := range myConfig {
 		gConfig[k] = v
 	}
-	gConfig["GSMTP_VERBOSE"] = strings.ToUpper(verbose)
+	//gConfig["GSMTP_VERBOSE"] = strings.ToUpper(verbose)
 	if len(iface) > 0 {
 		gConfig["GSTMP_LISTEN_INTERFACE"] = iface
 	}
@@ -168,6 +169,10 @@ func configure() {
 			allowedHosts[arr[i]] = true
 		}
 	}
+
+	fmt.Printf("configFile = %#v\n", configFile)
+	fmt.Printf("gConfig = %#v\n", gConfig)
+
 	var n int
 	var n_err error
 	// sem is an active clients channel used for counting clients
