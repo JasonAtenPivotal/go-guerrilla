@@ -64,7 +64,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-
+	"net/http"
 	"github.com/sloonz/go-iconv"
 	"github.com/sloonz/go-qprintable"
 
@@ -118,9 +118,21 @@ var gConfig = map[string]string{
 	"GSTMP_LISTEN_INTERFACE": "0.0.0.0:25",
 	"GSMTP_PUB_KEY":          "/etc/ssl/certs/ssl-cert-snakeoil.pem",
 	"GSMTP_PRV_KEY":          "/etc/ssl/private/ssl-cert-snakeoil.key",
+
+	"GM_MAIL_TABLE":          "mail_queue",
 	"GM_ALLOWED_HOSTS":       "guerrillamail.de,guerrillamailblock.com",
 	"GM_PRIMARY_MAIL_HOST":   "guerrillamail.com",
 	"GM_MAX_CLIENTS":         "500",
+
+	"MYSQL_HOST": "127.0.0.1:3306",
+	"MYSQL_USER": "go_guerrilla",
+	"MYSQL_PASS": "ok",
+	"MYSQL_DB": "go_guerrilla",
+
+	"NGINX_AUTH_ENABLED": "N", // Y or N
+	"NGINX_AUTH": "127.0.0.1:8025", // If using Nginx proxy, ip and port to serve Auth requsts
+	"SGID": "1008", // group id
+	"SUID": "1008", // user id, from /etc/passwd
 }
 
 func logln(level int, s string) {
@@ -219,6 +231,9 @@ func main() {
 	for i := 0; i < 3; i++ {
 		logln(1, fmt.Sprintf("Starting mail processing worker %d", i))
 		go saveMail()
+	}
+	if gConfig["NGINX_AUTH_ENABLED"] == "Y" {
+		go nginxHTTPAuth()
 	}
 
 	// Start listening for SMTP connections
@@ -647,4 +662,28 @@ func md5hex(str string) string {
 	h.Write([]byte(str))
 	sum := h.Sum([]byte{})
 	return hex.EncodeToString(sum)
+}
+
+// If running Nginx as a proxy, give Nginx the IP address and port for the SMTP server
+// Primary use of Nginx is to terminate TLS so that Go doesn't need to deal with it.
+// This could perform auth and load balancing too
+// See http://wiki.nginx.org/MailCoreModule
+func nginxHTTPAuth() {
+	parts := strings.Split(gConfig["GSTMP_LISTEN_INTERFACE"], ":")
+	gConfig["HTTP_AUTH_HOST"] = parts[0]
+	gConfig["HTTP_AUTH_PORT"] = parts[1]
+	fmt.Println(parts)
+	http.HandleFunc("/", nginxHTTPAuthHandler)
+	err := http.ListenAndServe(gConfig["NGINX_AUTH"], nil)
+	if err != nil {
+		log.Fatal("ListenAndServe: ", err)
+	}
+
+}
+
+func nginxHTTPAuthHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Auth-Status", "OK")
+	w.Header().Add("Auth-Server", gConfig["HTTP_AUTH_HOST"])
+	w.Header().Add("Auth-Port", gConfig["HTTP_AUTH_PORT"])
+	fmt.Fprint(w, "")
 }
