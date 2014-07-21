@@ -669,9 +669,9 @@ func NewSaver(saveMailChan chan *Client, cfg Config, notify chan *Client) *Saver
 func (s *Saver) start() {
 	go func() {
 		var to string
-		var err error
-		var body string
-		var length int
+		//var err error
+		//var body string
+		//var length int
 
 		//  receives values from the channel repeatedly until it is closed.
 		s.Cfg.logln(1, "saveMail entering loop")
@@ -691,8 +691,15 @@ func (s *Saver) start() {
 				} else {
 					to = user + "@" + s.Cfg.Map["GM_PRIMARY_MAIL_HOST"]
 				}
-				length = len(client.data)
+				//length = len(client.data)
+				fmt.Printf("debug: client.subject is: '%s'\n", client.subject)		
 				client.subject = mimeHeaderDecode(client.subject)
+
+				if s.Cfg.Verbose {
+					fmt.Printf("debug: client.data is: '%s'\n", client.data)
+					fmt.Printf("debug: client.subject is: '%s'\n", client.subject)
+				}
+
 				client.hash = md5hex(to + client.mail_from + client.subject + strconv.FormatInt(time.Now().UnixNano(), 10))
 				// Add extra headers
 				add_head := ""
@@ -702,11 +709,8 @@ func (s *Saver) start() {
 				add_head += "	" + time.Now().Format(time.RFC1123Z) + "\r\n"
 				// compress to save space
 				client.data = compress(add_head + client.data)
-				body = "gzencode"
+				//body = "gzencode"
 
-				if s.Cfg.Verbose {
-					fmt.Println(to, err, body, length)
-				}
 				client.savedNotify <- 1
 
 				if s.NotifyAfterSave != nil {
