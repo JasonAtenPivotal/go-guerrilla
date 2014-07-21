@@ -8,37 +8,51 @@ import (
 
 func TestMailParsing(t *testing.T) {
 
-	cv.Convey("Given a mail message", t, func() {
+	rawSuccessEmail := `Date: Mon, 21 Jul 2014 17:51:14 +0000 (UTC)
+From: jaten@pivotallabs.com
+Sender: jaten@pivotallabs.com
+Reply-To: jaten@pivotallabs.com
+To: jaten@pivotallabs.com
+Message-ID: <670094551.5.1405965074534.JavaMail.jaten@pivotallabs.com>
+Subject: Stage [testemailsending/2/defaultStage/1] passed
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Transfer-Encoding: 7bit
 
-		msg := `
-To: "Me" <me@p-i-v-o-t-a.l-labs.com>
-From: <me@p-i-v-o-t-a.l-labs.com>
-Subject: "test-subject"
-Mime-Version: 1.0
-Content-Type: multipart/mixed;
- boundary=b7877c6ee71cd8d2a363751f0782a83f9449fd9adab87cad2b2ac0af0822
+See details: http://www.gocd.cf-app.com/go/pipelines/testemailsending/2/defaultStage/1
 
---b7877c6ee71cd8d2a363751f0782a83f9449fd9adab87cad2b2ac0af0822
-Content-Type: multipart/alternative;
- boundary=10ed87264bf00684a2782eb8e5af5a479e9644010088bc37164d511ad53f
+-- CHECK-INS --
 
---10ed87264bf00684a2782eb8e5af5a479e9644010088bc37164d511ad53fw
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+Git: https://github.com/pivotal-cf-experimental/go-guerrilla
+revision: 0111df6930fa11a28febde2197b591a5a67fb3e4, modified by Jason E. Aten <j.e.aten@gmail.com> on 2014-07-21 15:36:00.0
+new failing test for body of email extraction in place
+added body.go
+modified goguerrilla.conf
+modified goguerrilla.go
+added parse_test.go
 
-test-body
---10ed87264bf00684a2782eb8e5af5a479e9644010088bc37164d511ad53f
-Content-Transfer-Encoding: base64
-Content-Type: text/html; charset=utf-8
-
-PGZvbnQgc2l6ZT0iNCI+PHByZT4KdGVzdC1ib2R5CjwvcHJlPjwvZm9udD4K
---10ed87264bf00684a2782eb8e5af5a479e9644010088bc37164d511ad53f--
-
---b7877c6ee71cd8d2a363751f0782a83f9449fd9adab87cad2b2ac0af0822--
+Sent by Go on behalf of releng
 .
 `
-		cv.Convey("we should be able to extract the body from the mime-types", func() {
-			cv.So(BodyOfMail(msg), cv.ShouldEqual, "test-body")
+
+	expectedSuccessBody := `See details: http://www.gocd.cf-app.com/go/pipelines/testemailsending/2/defaultStage/1
+
+-- CHECK-INS --
+
+Git: https://github.com/pivotal-cf-experimental/go-guerrilla
+revision: 0111df6930fa11a28febde2197b591a5a67fb3e4, modified by Jason E. Aten <j.e.aten@gmail.com> on 2014-07-21 15:36:00.0
+new failing test for body of email extraction in place
+added body.go
+modified goguerrilla.conf
+modified goguerrilla.go
+added parse_test.go
+
+Sent by Go on behalf of releng
+`
+
+	cv.Convey("Given a GoCD success mail message", t, func() {
+		cv.Convey("we should be able to extract the body", func() {
+			cv.So(BodyOfMail(rawSuccessEmail), cv.ShouldEqual, expectedSuccessBody)
 		})
 	})
 }
