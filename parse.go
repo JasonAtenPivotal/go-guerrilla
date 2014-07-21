@@ -6,6 +6,29 @@ import (
 	"strconv"
 )
 
+/* notes on GoCD notification meaning:
+
+http://www.gocd.cf-app.com/go/help/dev_notifications.html
+
+You can set up notifications for different events
+
+All - all the runs for the stage
+Passes - the passed runs for the stage
+Fails - the stage runs that failed
+Breaks - the stage run that broke the build
+Fixed - the stage run that fixed the previous failure
+Cancelled - the stage run that was cancelled
+
+Illustration
+
+At the moment:
+Previous build Pass, current build Fail: Event: Break } we treat these two as failures
+Previous build Fail, current build Fail: Event: Fail  }
+Previous build Fail, current build Pass: Event: Fixed } we treat these two as pass
+Previous build Pass, current build Pass: Event: Pass  }
+
+*/
+
 var bodyReString = `Content-Type: text/plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit\n\n((.|\n)+).\n`
 
@@ -54,7 +77,7 @@ func ParseSubject(subject string) (pass bool, pipe string, pipeno int, stage str
 	}
 
 	var err error
-	pass = matches[5] == "passed"
+	pass = (matches[5] == "passed" || matches[5] == "is fixed")
 	pipe = matches[1]
 	pipeno, err = strconv.Atoi(matches[2])
 	if err != nil {
