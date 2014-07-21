@@ -1,46 +1,49 @@
 package main
 
 import (
-	"testing"
-	"os/exec"
-	"github.com/glycerine/gophermail"
 	"fmt"
+	"os/exec"
+	"testing"
 	"time"
+
 	cv "github.com/smartystreets/goconvey/convey"
 )
 
-
 func TestMailSendReceive(t *testing.T) {
-	cv.Convey("Given a running instance of go-guerrilla", t, func() {
+	addr := "localhost:2525"
+	mailchan := make(chan *Client)
+	guer := NewGoGuerrillaSmtpd(addr, mailchan)
+	guer.Start()
+	defer guer.Shutdown()
 
-	        addr := "localhost:2525"
-		mailchan := make(chan gophermail.Message)
-	        guer := NewGoGuerrillaSmtpServer(addr, mailchan)
+	cv.Convey("Given a running instance of go-guerrilla", t, func() {
 
 		subject := "test-subject"
 		body := "test-body"
+		var receivedMail *Client
 
 		cv.Convey(fmt.Sprintf("it should receive mail when sent mail using our gomailclient utility to %v", addr), func() {
 
-			c := exec.Command("gomailclient/gomailclient")
-			c.Args = []string{addr, subject, body}
-			_, err := c.Output()
-			if err != nil {
-				panic(err)
+			if false {
+				c := exec.Command("gomailclient/gomailclient")
+				c.Args = []string{addr, subject, body}
+				_, err := c.Output()
+				if err != nil {
+					panic(err)
+				}
 			}
+			go SendTestMail(subject, body)
 
-			fmt.Printf("Waiting for go-guerrilla to receive the email")
+			fmt.Printf("Waiting for go-guerrilla to receive the email.\n")
 
 			select {
-			       case receievedMail := <- mailchan:
-				   cv.So(receivedMail.Body, cv.ShouldEqual, body)
-		 	           cv.So(receivedMail.Subject, cv.ShouldEqual, subject)
-                               case <- time.After(10 * 1e9):
-                                   fmt.Printf("go-guerilla did not recieve email after 10 seconds, failing test.\n")
-                                   cv.So(true, cv.ShouldEqual, false)
+			case receivedMail = <-mailchan:
+				cv.So(receivedMail.subject, cv.ShouldEqual, `"`+subject+`"`)
+			case <-time.After(10 * 1e9):
+				fmt.Printf("go-guerilla did not recieve email after 10 seconds, failing test.\n")
+				cv.So(true, cv.ShouldEqual, false)
 			}
 
-			
 		})
 	})
 }
