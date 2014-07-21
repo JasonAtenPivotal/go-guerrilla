@@ -6,9 +6,7 @@ import (
 	cv "github.com/smartystreets/goconvey/convey"
 )
 
-func TestMailParsing(t *testing.T) {
-
-	rawSuccessEmail := `Date: Mon, 21 Jul 2014 17:51:14 +0000 (UTC)
+var rawSuccessEmail = `Date: Mon, 21 Jul 2014 17:51:14 +0000 (UTC)
 From: jaten@pivotallabs.com
 Sender: jaten@pivotallabs.com
 Reply-To: jaten@pivotallabs.com
@@ -35,7 +33,7 @@ Sent by Go on behalf of releng
 .
 `
 
-	expectedSuccessBody := `See details: http://www.gocd.cf-app.com/go/pipelines/testemailsending/2/defaultStage/1
+var expectedSuccessBody = `See details: http://www.gocd.cf-app.com/go/pipelines/testemailsending/2/defaultStage/1
 
 -- CHECK-INS --
 
@@ -50,9 +48,23 @@ added parse_test.go
 Sent by Go on behalf of releng
 `
 
+func TestMailBodyExtraction(t *testing.T) {
 	cv.Convey("Given a GoCD success mail message", t, func() {
 		cv.Convey("we should be able to extract the body", func() {
 			cv.So(BodyOfMail(rawSuccessEmail), cv.ShouldEqual, expectedSuccessBody)
+		})
+	})
+}
+
+func TestMailParsing(t *testing.T) {
+	cv.Convey("Given a GoCD mail message", t, func() {
+		cv.Convey("pass/fail status should be extracted from the subject line", func() {
+			parsedEmail := ParseEmail(rawSuccessEmail)
+			cv.So(parsedEmail.Pass, cv.ShouldEqual, true)
+			cv.So(parsedEmail.PipelineName, cv.ShouldEqual, "testemailsending")
+			cv.So(parsedEmail.PipelineBuild, cv.ShouldEqual, 1)
+			cv.So(parsedEmail.StageName, cv.ShouldEqual, "defaultStage")
+			cv.So(parsedEmail.StageBuild, cv.ShouldEqual, 1)
 		})
 	})
 }
