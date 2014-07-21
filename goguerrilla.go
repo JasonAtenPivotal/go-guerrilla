@@ -38,14 +38,7 @@ Site: http://www.guerrillamail.com/
 
 See README for more details
 
-To build
-Install the following
-$ go get github.com/sloonz/go-iconv
-
 TODO: after failing tls,
-
-patch:
-rebuild all: go build -a -v new.go
 
 */
 
@@ -119,6 +112,7 @@ type Smtpd struct {
 }
 
 func NewGoGuerrillaSmtpd(addr string, mailchan chan *Client) *Smtpd {
+	cfg := NewConfig()
 	return &Smtpd{
 		Addr:             addr,
 		ExternalMailchan: mailchan,
@@ -127,8 +121,8 @@ func NewGoGuerrillaSmtpd(addr string, mailchan chan *Client) *Smtpd {
 		PortBound:        make(chan bool),
 		SaveMailChan:     make(chan *Client, 5),
 		Savers:           make([]*Saver, 0),
-		Cfg:              *NewConfig(),
-		Clients:          NewClientTracker(),
+		Cfg:              *cfg,
+		Clients:          NewClientTracker(cfg),
 	}
 }
 
@@ -284,6 +278,7 @@ func main() {
 
 	// Stop the service gracefully.
 	server.Shutdown()
+	log.Println("shutdown complete.")
 }
 
 func (s *Smtpd) Shutdown() {
@@ -306,36 +301,41 @@ type ClientTracker struct {
 	Done        chan bool
 
 	ShutdownRequested bool
+	Cfg               Config
 }
 
-func NewClientTracker() *ClientTracker {
+func NewClientTracker(cfg *Config) *ClientTracker {
 	return &ClientTracker{
 		Clients:            make(map[*Client]bool),
 		ClientDoneChannel:  make(chan *Client),
 		ClientAddedChannel: make(chan *Client),
 		RequestStop:        make(chan bool),
 		Done:               make(chan bool),
+		Cfg:                *cfg,
 	}
 }
 
-func (t *ClientTracker) Start() {
+func (s *ClientTracker) Start() {
 
 	go func() {
 		for {
 			select {
-			case cl := <-t.ClientAddedChannel:
-				t.Clients[cl] = true
+			case cl := <-s.ClientAddedChannel:
+				s.Clients[cl] = true
 
-			case cl := <-t.ClientDoneChannel:
-				delete(t.Clients, cl)
-				if len(t.Clients) == 0 && t.ShutdownRequested {
-					close(t.Done)
+			case cl := <-s.ClientDoneChannel:
+				delete(s.Clients, cl)
+				if len(s.Clients) == 0 && s.ShutdownRequested {
+					s.Cfg.logln(1, "ClientTracker has no more clients: exiting.\n")
+					close(s.Done)
 					return
 				}
-			case <-t.RequestStop:
-				t.ShutdownRequested = true
-				if len(t.Clients) == 0 {
-					close(t.Done)
+			case <-s.RequestStop:
+				s.ShutdownRequested = true
+				s.Cfg.logln(1, "ClientTracker sees RequestStop, flagging in all clients to exit.\n")
+				if len(s.Clients) == 0 {
+					s.Cfg.logln(1, "ClientTracker has no more clients: exiting.\n")
+					close(s.Done)
 					return
 				}
 			}
@@ -390,20 +390,25 @@ func (s *Smtpd) Start() {
 		for {
 			select {
 			case <-s.RequestStop:
+				s.Cfg.logln(1, "Smtpd: stop requested, initiating shutdown...\n")
 				// stop clients
 				s.Clients.RequestStop <- true
 				<-s.Clients.Done
+
+				s.Cfg.logln(1, "Smtpd: shutdown progress: clients done...\n")
 
 				// stop savers
 				for _, saver := range s.Savers {
 					saver.RequestStop <- true
 					<-saver.Done
 				}
+				s.Cfg.logln(1, "Smtpd: shutdown progress: savers done...\n")
+
 				// we are done
 				close(s.Done)
 				return
 			default:
-				//fmt.Printf("Smtpd::Start(), about to block on Accept for 1000 msec.\n")
+				//s.Cfg.logln(1, "Smtpd::Start(), about to block on Accept for 1000 msec.\n")
 				listener.SetDeadline(time.Now().Add(1000 * time.Millisecond))
 				conn, err := listener.Accept()
 				if isTimeout(err) {
@@ -673,6 +678,7 @@ func (s *Saver) start() {
 		for {
 			select {
 			case <-s.RequestStop:
+				s.Cfg.logln(1, "saver sees RequestStop, exiting.\n")
 				close(s.Done)
 				return
 			case client := <-s.SaveMailChan:
@@ -703,7 +709,9 @@ func (s *Saver) start() {
 				}
 				client.savedNotify <- 1
 
-				s.NotifyAfterSave <- client
+				if s.NotifyAfterSave != nil {
+					s.NotifyAfterSave <- client
+				}
 			}
 		}
 	}()
