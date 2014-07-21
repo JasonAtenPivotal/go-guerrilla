@@ -22,7 +22,7 @@ func TestMailSendReceive(t *testing.T) {
 		body := "test-body"
 		var receivedMail *Client
 
-		cv.Convey(fmt.Sprintf("it should receive mail when sent mail using our gomailclient utility to %v", addr), func() {
+		cv.Convey(fmt.Sprintf("it should receive mail when sent mail using our mailsender.go:SendTestMail() routine to: %v", addr), func() {
 
 			if false {
 				c := exec.Command("gomailclient/gomailclient")
@@ -34,11 +34,12 @@ func TestMailSendReceive(t *testing.T) {
 			}
 			go SendTestMail(subject, body)
 
-			fmt.Printf("Waiting for go-guerrilla to receive the email.\n")
+			fmt.Printf("\n       ... mail_test waiting for go-guerrilla to receive the email.\n")
 
 			select {
 			case receivedMail = <-mailchan:
 				cv.So(receivedMail.subject, cv.ShouldEqual, `"`+subject+`"`)
+				fmt.Printf("\n     good: received mail with expected subject: \"%s\"\n", subject)
 			case <-time.After(10 * 1e9):
 				fmt.Printf("go-guerilla did not recieve email after 10 seconds, failing test.\n")
 				cv.So(true, cv.ShouldEqual, false)

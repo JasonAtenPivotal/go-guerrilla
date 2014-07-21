@@ -1,17 +1,15 @@
 package main
 
 import (
-	"fmt"
 	"io"
-	"log"
 
 	"github.com/glycerine/gophermail"
 )
 
 func SendTestMail(subject string, body string) {
-	fmt.Printf("SendTestMail() starting.\n")
+	//fmt.Printf("SendTestMail() starting.\n")
 	sendGopherMail(subject, body)
-	log.Printf("SentTestMail() done.")
+	//log.Printf("SentTestMail() done.")
 }
 
 func sendGopherMail(subject string, body string) {
@@ -31,7 +29,7 @@ func sendGopherMail(subject string, body string) {
 		// Headers mail.Header
 	}
 
-	fmt.Printf("SendTestMail()/sendGopherMail() about to call gophermail.SendMail().\n")
+	//fmt.Printf("SendTestMail()/sendGopherMail() about to call gophermail.SendMail().\n")
 	err := gophermail.SendMail(addr, nil, msg)
 	if err != io.EOF && err != nil {
 		panic(err)

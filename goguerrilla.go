@@ -213,7 +213,7 @@ func (s *Smtpd) configure() {
 			jsonMap[k] = v
 		}
 	}
-	fmt.Printf("jsonMap = %#v\n", jsonMap)
+	//fmt.Printf("jsonMap = %#v\n", jsonMap)
 
 	// let command line override
 	if pver != nil && *pver {
@@ -403,7 +403,7 @@ func (s *Smtpd) Start() {
 				close(s.Done)
 				return
 			default:
-				fmt.Printf("Smtpd::Start(), about to block on Accept for 1000 msec.\n")
+				//fmt.Printf("Smtpd::Start(), about to block on Accept for 1000 msec.\n")
 				listener.SetDeadline(time.Now().Add(1000 * time.Millisecond))
 				conn, err := listener.Accept()
 				if isTimeout(err) {
@@ -698,7 +698,9 @@ func (s *Saver) start() {
 				client.data = compress(add_head + client.data)
 				body = "gzencode"
 
-				fmt.Println(to, err, body, length)
+				if s.Cfg.Verbose {
+					fmt.Println(to, err, body, length)
+				}
 				client.savedNotify <- 1
 
 				s.NotifyAfterSave <- client
