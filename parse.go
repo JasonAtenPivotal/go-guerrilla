@@ -29,29 +29,18 @@ Previous build Pass, current build Pass: Event: Pass  }
 
 */
 
-var bodyReString = `Content-Type: text/plain; charset=us-ascii
+var (
+	bodyReString = `Content-Type: text/plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit\n\n((.|\n)+).\n`
+	subjectReString      = `\nSubject: (.+)\n`
+	subjectDetailsString = `Stage \[([^/]+)\/(\d+)\/([^/]+)\/(\d+)\] (.+)`
+	revisionString       = `revision: (.+)\n`
 
-var bodyRegex = regexp.MustCompile(bodyReString)
-
-var subjectReString = `\nSubject: (.+)\n`
-var subjectRegex = regexp.MustCompile(subjectReString)
-
-func BodyOfMail(msg string) string {
-	matches := bodyRegex.FindStringSubmatch(msg)
-	if matches == nil || len(matches) < 1 {
-		panic(fmt.Sprintf("no body delimiter '%s' found in msg: %s", bodyReString, msg))
-	}
-	return matches[1]
-}
-
-func SubjectOfMail(msg string) string {
-	matches := subjectRegex.FindStringSubmatch(msg)
-	if matches == nil || len(matches) < 1 {
-		panic(fmt.Sprintf("no body delimiter '%s' found in msg: %s", subjectReString, msg))
-	}
-	return matches[1]
-}
+	bodyRe           = regexp.MustCompile(bodyReString)
+	subjectRe        = regexp.MustCompile(subjectReString)
+	subjectDetailsRe = regexp.MustCompile(subjectDetailsString)
+	revisionRe       = regexp.MustCompile(revisionString)
+)
 
 type GoCDNotice struct {
 	Pass          bool
@@ -60,20 +49,43 @@ type GoCDNotice struct {
 	StageName     string
 	StageBuild    int
 	GitRev        string
-	Checkins      string
-	DetailsURL    string
 }
 
 func NewGoCDNotice() *GoCDNotice {
 	return &GoCDNotice{}
 }
 
+func BodyOfMail(msg string) string {
+	matches := bodyRe.FindStringSubmatch(msg)
+	if matches == nil || len(matches) < 1 {
+		panic(fmt.Sprintf("no body delimiter '%s' found in msg: %s", bodyReString, msg))
+	}
+
+	return matches[1]
+}
+
+func ExtractGitRev(email string) string {
+	matches := revisionRe.FindStringSubmatch(email)
+	if matches == nil || len(matches) < 1 {
+		panic(fmt.Sprintf("bad subject '%s' matched by '%s'", email, revisionString))
+	}
+
+	return matches[1]
+}
+
+func SubjectOfMail(msg string) string {
+	matches := subjectRe.FindStringSubmatch(msg)
+	if matches == nil || len(matches) < 1 {
+		panic(fmt.Sprintf("no body delimiter '%s' found in msg: '%s'", subjectReString, msg))
+	}
+
+	return matches[1]
+}
+
 func ParseSubject(subject string) (pass bool, pipe string, pipeno int, stage string, stageno int) {
-	var subjectString = `Stage \[([^/]+)\/(\d+)\/([^/]+)\/(\d+)\] (.+)`
-	var subjectRe = regexp.MustCompile(subjectString)
-	matches := subjectRe.FindStringSubmatch(subject)
+	matches := subjectDetailsRe.FindStringSubmatch(subject)
 	if matches == nil || len(matches) < 6 {
-		panic(fmt.Sprintf("bad subject '%s' matched by %s", subject, subjectString))
+		panic(fmt.Sprintf("bad subject '%s' matched by '%s'", subject, subjectDetailsString))
 	}
 
 	var err error
@@ -81,21 +93,19 @@ func ParseSubject(subject string) (pass bool, pipe string, pipeno int, stage str
 	pipe = matches[1]
 	pipeno, err = strconv.Atoi(matches[2])
 	if err != nil {
-		panic(fmt.Sprintf("failed to parse pipeno: %s", matches[2]))
+		panic(fmt.Sprintf("failed to parse pipeno: '%s'", matches[2]))
 	}
 	stage = matches[3]
 	stageno, err = strconv.Atoi(matches[4])
 	if err != nil {
-		panic(fmt.Sprintf("failed to parse stageno: %s", matches[4]))
+		panic(fmt.Sprintf("failed to parse stageno: '%s'", matches[4]))
 	}
+
 	return
 }
 
 func ParseEmail(email string) *GoCDNotice {
-
-	//body := BodyOfMail(email)
 	subject := SubjectOfMail(email)
-
 	pass, pipe, pipeno, stage, stageno := ParseSubject(subject)
 
 	n := NewGoCDNotice()
@@ -104,5 +114,7 @@ func ParseEmail(email string) *GoCDNotice {
 	n.PipelineBuild = pipeno
 	n.StageName = stage
 	n.StageBuild = stageno
+	n.GitRev = ExtractGitRev(email)
+
 	return n
 }

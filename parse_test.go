@@ -170,3 +170,12 @@ func TestMailParsing(t *testing.T) {
 
 	})
 }
+
+func TestGitRevisionRetrieval(t *testing.T) {
+	cv.Convey("Given a GoCD passing email message", t, func() {
+		cv.Convey("the git revision: line should be extracted from the body", func() {
+			parsedEmail := ParseEmail(rawPassedEmail)
+			cv.So(parsedEmail.GitRev, cv.ShouldEqual, "0111df6930fa11a28febde2197b591a5a67fb3e4, modified by Jason E. Aten <j.e.aten@gmail.com> on 2014-07-21 15:36:00.0")
+		})
+	})
+}
