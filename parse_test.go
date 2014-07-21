@@ -62,7 +62,7 @@ func TestMailParsing(t *testing.T) {
 			parsedEmail := ParseEmail(rawSuccessEmail)
 			cv.So(parsedEmail.Pass, cv.ShouldEqual, true)
 			cv.So(parsedEmail.PipelineName, cv.ShouldEqual, "testemailsending")
-			cv.So(parsedEmail.PipelineBuild, cv.ShouldEqual, 1)
+			cv.So(parsedEmail.PipelineBuild, cv.ShouldEqual, 2)
 			cv.So(parsedEmail.StageName, cv.ShouldEqual, "defaultStage")
 			cv.So(parsedEmail.StageBuild, cv.ShouldEqual, 1)
 		})
